@@ -1,77 +1,96 @@
 @extends('layouts.app')
 
-@section('title', isset($book) ? $book['title'] . ' - Open Library' : 'Buku Tidak Ditemukan')
+@section('title', isset($book) ? $book['title'] . '' : 'Buku Tidak Ditemukan')
 
 @section('content')
-<div class="detail-container">
-    <a href="{{ url()->previous() }}" class="btn btn-outline-secondary mb-4">
-        ← Kembali
+<div class="animate-fade-in">
+    <!-- Back Button -->
+    <a href="{{ url()->previous() }}" class="inline-flex items-center gap-2 text-gray-600 hover:text-gray-800 mb-6 transition-colors">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+        </svg>
+        <span class="font-medium">Kembali</span>
     </a>
 
     @if($error)
-        <div class="alert alert-danger">
-            <h4 class="alert-heading">Error!</h4>
-            <p>{{ $error }}</p>
-            <hr>
-            <a href="{{ route('home') }}" class="btn btn-primary">Kembali ke Beranda</a>
+        <!-- Error State -->
+        <div class="bg-red-50 border-l-4 border-red-500 rounded-lg p-6 shadow-md">
+            <div class="flex items-start gap-4">
+                <img src="{{ asset('image/silang.png') }}" alt="buku" style="height: 28px; width: 28px;">
+                <div class="flex-1">
+                    <h4 class="text-xl font-bold text-red-900 mb-2">Error!</h4>
+                    <p class="text-red-800 mb-4">{{ $error }}</p>
+                    <a href="{{ route('home') }}" class="inline-block bg-primary-500 text-white px-6 py-2 rounded-lg font-semibold hover:bg-primary-600 transition-colors">
+                        Kembali ke Beranda
+                    </a>
+                </div>
+            </div>
         </div>
     @elseif($book)
-        <div class="book-detail card shadow-sm">
-            <div class="card-body">
-                <div class="detail-content row">
-                    <div class="col-md-4 mb-4 mb-md-0">
-                        <div class="detail-cover">
-                            <img src="{{ $book['cover'] }}" 
-                                 alt="{{ $book['title'] }}"
-                                 onerror="this.parentElement.innerHTML='<div class=\'placeholder-cover\'>📖</div>'">
+        <!-- Book Detail Card -->
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+            <div class="p-6 md:p-8">
+                <div class="grid md:grid-cols-3 gap-8">
+                    <!-- Book Cover -->
+                    <div class="md:col-span-1">
+                        <div class="rounded-lg overflow-hidden shadow-xl">
+                            @if($book['cover'])
+                                <img src="{{ $book['cover'] }}" 
+                                     alt="{{ $book['title'] }}"
+                                     class="w-full h-[500px] object-cover"
+                                     onerror="this.parentElement.innerHTML='<div class=\'w-full h-[500px] bg-gradient-to-br from-primary-500 to-secondary-500 flex items-center justify-center text-white text-7xl\'>Buku </div>'">
+                            @else
+                                <div class="w-full h-[500px] bg-gradient-to-br from-primary-500 to-secondary-500 flex items-center justify-center text-white text-7xl">
+                                       <img src="{{ asset('image/buku2.png') }}" alt="buku" style="height: 28px; width: 28px;">
+                                </div>
+                            @endif
                         </div>
                     </div>
-                    <div class="col-md-8">
-                        <div class="detail-info">
-                            <h2 class="mb-3">{{ $book['title'] }}</h2>
+                    
+                    <!-- Book Info -->
+                    <div class="md:col-span-2">
+                        <h2 class="text-3xl font-bold text-gray-800 mb-6">{{ $book['title'] }}</h2>
+                        
+                        <!-- Meta Information -->
+                        <div class="space-y-3 mb-6">
+                            <div class="flex items-start gap-3">
+                                <span class="text-gray-600 font-semibold min-w-[120px]">Penulis:</span>
+                                <span class="text-gray-700">{{ $book['creator'] }}</span>
+                            </div>
+                            <div class="flex items-start gap-3">
+                                <span class="text-gray-600 font-semibold min-w-[120px]">Tahun Terbit:</span>
+                                <span class="text-gray-700">{{ $book['year'] }}</span>
+                            </div>
+                            <div class="flex items-start gap-3">
+                                <span class="text-gray-600 font-semibold min-w-[120px]">Penerbit:</span>
+                                <span class="text-gray-700">{{ $book['publisher'] }}</span>
+                            </div>
+                            <div class="flex items-start gap-3">
+                                <span class="text-gray-600 font-semibold min-w-[120px]">Bahasa:</span>
+                                <span class="text-gray-700">{{ $book['language'] }}</span>
+                            </div>
+                       
+                        </div>
+
+                        <!-- Description -->
+                        <div class="mb-8">
+                            <h5 class="text-xl font-semibold text-gray-800 mb-3">Deskripsi</h5>
+                            <div class="text-gray-600 leading-relaxed whitespace-pre-line">
+                                 {{ strip_tags(str_replace(['<br />', '<br/>', '<br>', '</div><div>', '</div>'], ["\n", "\n", "\n", "\n\n", "\n"], $book['description'])) }}
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="flex flex-wrap gap-3">
                             
-                            <div class="detail-meta mb-4">
-                                <p class="mb-2">
-                                    <strong>Penulis:</strong> 
-                                    <span class="text-muted">{{ $book['creator'] }}</span>
-                                </p>
-                                <p class="mb-2">
-                                    <strong>Tahun Terbit:</strong> 
-                                    <span class="text-muted">{{ $book['year'] }}</span>
-                                </p>
-                                <p class="mb-2">
-                                    <strong>Penerbit:</strong> 
-                                    <span class="text-muted">{{ $book['publisher'] }}</span>
-                                </p>
-                                <p class="mb-2">
-                                    <strong>Bahasa:</strong> 
-                                    <span class="text-muted">{{ $book['language'] }}</span>
-                                </p>
-                                @if($book['downloads'] > 0)
-                                    <p class="mb-2">
-                                        <strong>Total Unduhan:</strong> 
-                                        <span class="badge bg-success">{{ number_format($book['downloads']) }}</span>
-                                    </p>
-                                @endif
-                            </div>
-
-                            <div class="detail-description mb-4">
-                                <h5 class="mb-3">Deskripsi</h5>
-                                <p class="text-muted">{{ $book['description'] }}</p>
-                            </div>
-
-                            <div class="detail-actions d-flex gap-2 flex-wrap">
-                                <a href="{{ $book['download_link'] }}" 
-                                   target="_blank" 
-                                   class="btn btn-primary btn-lg">
-                                    ⬇️ Download Buku
-                                </a>
-                                <a href="{{ $book['detail_link'] }}" 
-                                   target="_blank" 
-                                   class="btn btn-outline-secondary btn-lg">
-                                    🔗 Lihat di Internet Archive
-                                </a>
-                            </div>
+                            <a href="{{ route('buku.download', $book['identifier']) }}" 
+                               target="_blank" 
+                               class="inline-flex items-center gap-2 bg-primary-500 text-white px-8 py-3 rounded-lg font-semibold hover:bg-primary-600 hover:-translate-y-0.5 active:translate-y-0 transition-all shadow-md hover:shadow-lg">
+                               
+                                <span>Download Buku</span>
+                            </a>
+                           
+                            
                         </div>
                     </div>
                 </div>

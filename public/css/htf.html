@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Flowchart Sistem UnduhPustaka</title>
+    <style>
+        /* CSS styling akan diletakkan di sini */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f9;
+        }
+        .flow-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .step {
+            width: 300px;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s;
+            position: relative;
+        }
+        /* Simbol Flowchart */
+        .terminator { background-color: #d1e7dd; border: 2px solid #0f5132; } /* Oval: Mulai/Selesai */
+        .decision { background-color: #ffe599; border: 2px solid #b38800; } /* Wajik: Keputusan */
+        .process { background-color: #b8daff; border: 2px solid #0c5460; } /* Persegi: Proses */
+        .io { background-color: #f8d7da; border: 2px solid #721c24; } /* Input/Output */
+        
+        .arrow::after {
+            content: '↓';
+            font-size: 20px;
+            display: block;
+            margin: 5px auto;
+            color: #343a40;
+        }
+        .last-step .arrow::after {
+            content: ''; /* Hilangkan panah di langkah terakhir */
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Flowchart Alur Kerja Sistem UnduhPustaka</h1>
+    
+    <div class="flow-container">
+        
+        <div class="step terminator">1. MULAI (Akses Website)</div>
+        <div class="arrow"></div>
+
+        <div class="step decision">2. KEPUTUSAN: Login / Registrasi?</div>
+        <div class="arrow"></div>
+        
+        <div class="step process">3. PROSES: Otentikasi Pengguna Berhasil</div>
+        <div class="arrow"></div>
+
+        <div class="step process">4. PROSES: Tampil Halaman Index (Buku Trending)</div>
+        <div class="arrow"></div>
+        
+        <div class="step io">5. INPUT: Pengguna Memilih Buku</div>
+        <div class="arrow"></div>
+
+        <div class="step decision">6. KEPUTUSAN: Klik Tombol "Unduh"?</div>
+        <div class="arrow"></div>
+
+        <div class="step process">7. PROSES: Backend Mencatat Riwayat ke MySQL</div>
+        <div class="arrow"></div>
+
+        <div class="step process">8. PROSES: Akses Internet Archive API</div>
+        <div class="arrow"></div>
+
+        <div class="step io last-step">9. OUTPUT: Diarahkan ke Tautan Unduhan Resmi</div>
+        
+        <div class="step terminator">10. SELESAI</div>
+    </div>
+
+</body>
+</html>

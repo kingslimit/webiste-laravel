@@ -25,7 +25,7 @@ class BookController extends Controller
             default => 7
         };
 
-        // Get trending books from database
+        // trending 
         $trendingBooks = ReadingHistory::getTrending($days, 12);
 
         return view('index', [
@@ -36,7 +36,7 @@ class BookController extends Controller
     }
 
     /**
-     * Search books from Internet Archive
+     * Search books 
      */
     public function search(Request $request)
     {
@@ -88,55 +88,46 @@ class BookController extends Controller
     }
 
     /**
-     * Show book detail from Internet Archive and track view
+     * Show book detail 
      */
     public function show($id)
     {
         try {
-            // Fetch metadata
+            // Fetch
             $response = Http::timeout(10)->get("https://archive.org/metadata/{$id}");
 
             if ($response->successful()) {
                 $data = $response->json();
                 
-                // Extract metadata
+                // Extract 
                 $metadata = $data['metadata'] ?? [];
                 $files = $data['files'] ?? [];
                 
-                // Find PDF or EPUB file
-                $downloadFile = null;
-                foreach ($files as $file) {
-                    if (isset($file['format']) && in_array(strtolower($file['format']), ['pdf', 'epub'])) {
-                        $downloadFile = $file;
-                        break;
-                    }
-                }
 
+                $downloadLink = "https://archive.org/details/{$id}";
+                // ARRAY
                 $book = [
-                    'identifier' => $id,
-                    'title' => $metadata['title'] ?? 'Tidak ada judul',
-                    'creator' => is_array($metadata['creator'] ?? null) 
-                        ? implode(', ', $metadata['creator']) 
-                        : ($metadata['creator'] ?? 'Unknown'),
-                    'year' => $metadata['year'] ?? $metadata['date'] ?? 'N/A',
-                    'publisher' => is_array($metadata['publisher'] ?? null)
-                        ? implode(', ', $metadata['publisher'])
-                        : ($metadata['publisher'] ?? 'Unknown'),
-                    'language' => is_array($metadata['language'] ?? null)
-                        ? implode(', ', $metadata['language'])
-                        : ($metadata['language'] ?? 'Unknown'),
-                    'description' => is_array($metadata['description'] ?? null)
-                        ? implode(' ', $metadata['description'])
-                        : ($metadata['description'] ?? 'Tidak ada deskripsi tersedia.'),
-                    'downloads' => $metadata['downloads'] ?? 0,
-                    'download_link' => $downloadFile 
-                        ? "https://archive.org/download/{$id}/" . ($downloadFile['name'] ?? '')
-                        : "https://archive.org/details/{$id}",
-                    'detail_link' => "https://archive.org/details/{$id}",
-                    'cover' => "https://archive.org/services/img/{$id}"
-                ];
+                'identifier' => $id,
+                'title' => $metadata['title'] ?? 'Tidak ada judul',
+                'creator' => is_array($metadata['creator'] ?? null)
+                    ? implode(', ', $metadata['creator'])
+                    : ($metadata['creator'] ?? 'Unknown'),
+                'year' => $metadata['year'] ?? $metadata['date'] ?? 'N/A',
+                'publisher' => is_array($metadata['publisher'] ?? null)
+                    ? implode(', ', $metadata['publisher'])
+                    : ($metadata['publisher'] ?? 'Unknown'),
+                'language' => is_array($metadata['language'] ?? null)
+                    ? implode(', ', $metadata['language'])
+                    : ($metadata['language'] ?? 'Unknown'),
+                'description' => is_array($metadata['description'] ?? null)
+                    ? implode(' ', $metadata['description'])
+                    : ($metadata['description'] ?? 'Tidak ada deskripsi tersedia.'),
+                'downloads' => $metadata['downloads'] ?? 0,
+                'detail_link' => "https://archive.org/details/{$id}",
+                'cover' => "https://archive.org/services/img/{$id}"
+               ];
 
-                // Track view if user is logged in
+                
                 if (Auth::check()) {
                     ReadingHistory::trackView(Auth::id(), [
                         'identifier' => $book['identifier'],
@@ -166,4 +157,104 @@ class BookController extends Controller
             ]);
         }
     }
+
+    /**
+     * Download Pdf
+     */
+
+        public function downloadPdf($id)
+{
+    try {
+       
+        $response = Http::timeout(10)->get("https://archive.org/metadata/{$id}");
+        
+        if (!$response->successful()) {
+            return abort(404, 'Buku tidak ditemukan.');
+        }
+
+        //array json
+        $data = $response->json();
+        $files = $data['files'] ?? [];
+        $metadata = $data['metadata'] ?? [];
+        
+        // cari format pdfnya
+        $downloadableFile = null;
+        $pdfFormats = ['Text PDF', 'PDF', 'pdf', 'Additional Text PDF'];
+        foreach ($files as $file) {
+            $fileFormat = $file['format'] ?? '';
+            
+            if (in_array($fileFormat, $pdfFormats)) {
+                $downloadableFile = $file;
+                break;
+            }
+        }
+
+        //no found
+        if (!$downloadableFile) {
+            Log::warning('No PDF file found', [
+                'book_id' => $id, 
+                'available_formats' => array_column($files, 'format')
+            ]);
+            return redirect()->back()->with('error', 'File PDF tidak tersedia untuk buku ini.');
+        }
+
+        $fileName = $downloadableFile['name'];
+        $downloadUrl = "https://archive.org/download/{$id}/{$fileName}";
+
+      // Change pdf file name
+        $bookTitle = $metadata['title'] ?? 'Book';
+        $bookTitle = preg_replace('/[^A-Za-z0-9\-]/', '_', $bookTitle); 
+        $customFileName = substr($bookTitle, 0, 100) . '.pdf'; 
+
+
+        // log
+        Log::info('Proxying PDF download', [
+            'book_id' => $id,
+            'original_file' => $fileName,
+            'custom_name' => $customFileName,
+            'url' => $downloadUrl
+        ]);
+
+        // history user
+        if (Auth::check()) {
+            ReadingHistory::updateOrCreate(
+                [
+                    'user_id' => Auth::id(),
+                    'book_identifier' => $id,
+                ],
+                [
+                    'action_type' => 'downloaded',
+                    'accessed_at' => now(),
+                ]
+            );
+        }
+
+        // Download
+        return response()->streamDownload(function() use ($downloadUrl) {
+            $stream = Http::timeout(120) 
+                         ->withOptions(['stream' => true])
+                         ->get($downloadUrl)
+                         ->toPsrResponse()
+                         ->getBody();
+            
+            while (!$stream->eof()) {
+                echo $stream->read(8192); 
+                flush();
+            }
+        }, $customFileName, [
+            'Content-Type' => 'application/pdf',
+            'Cache-Control' => 'no-cache, no-store, must-revalidate',
+            'Pragma' => 'no-cache',
+            'Expires' => '0'
+        ]);
+
+    } catch (\Exception $e) {
+        Log::error('Download PDF Error', [
+            'book_id' => $id,
+            'message' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ]);
+        return redirect()->back()->with('error', 'Terjadi kesalahan saat mengunduh buku.');
+    }
+}
 }

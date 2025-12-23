@@ -1,3 +1,58 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Minimal Custom CSS -  */
+
+@layer components {
+  /* Book Grid t */
+  .book-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 2rem;
+  }
+  
+  @media (max-width: 768px) {
+    .book-grid {
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 1rem;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .book-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  /* Autocomplete Dropdown */
+  .autocomplete-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-top: none;
+    border-radius: 0 0 0.5rem 0.5rem;
+    max-height: 400px;
+    overflow-y: auto;
+    z-index: 1000;
+    display: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+  
+  .autocomplete-dropdown.show {
+    display: block;
+  }
+  
+  .autocomplete-item {
+    @apply px-5 py-3.5 cursor-pointer transition-colors border-b border-gray-100 flex items-center gap-3;
+  }
+  
+  .autocomplete-item:hover {
+    @apply bg-gray-50;
+  }
+}
+
+/*  */
